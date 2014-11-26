@@ -1,0 +1,15 @@
+{
+  "name": "vpnht-api",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "exec-sync": "^0.1.6",
+    "restify": "^2.8.3"
+  }
+}

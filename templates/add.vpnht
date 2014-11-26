@@ -1,0 +1,5 @@
+Hub vpnht
+UserCreate {username} /GROUP:none /REALNAME:none /NOTE:none
+UserSet {username} /GROUP:vpnht /REALNAME:none /NOTE:none
+UserPasswordSet {username} /PASSWORD:{password}
+UserExpiresSet {username} /EXPIRES "{expiration}"
