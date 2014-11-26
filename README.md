@@ -4,13 +4,17 @@
 ```
 {
     "CREDENTIALS": {
-        "API_KEY": "YOUR_KEY",
-        "API_SECRET": "YOUR_SECRET"
+        "API_KEY": "",
+        "API_SECRET": ""
     },
     "LOCAL_COMMAND": {
         "ADD": "ls -la",
         "DELETE": "ls -la",
         "UPDATE": "ls -la"
+    },
+    "FILES": {
+        "ADD": "/tmp/add.vpnht"
     }
 }
+
 ```
