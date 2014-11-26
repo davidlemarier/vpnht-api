@@ -38,13 +38,13 @@ server.post('/user', function (req, res, next) {
         data = data.toString();
         data = data.fmt(req.params);
 
-        fs.writeFile(CONFIG.FILES.ADD, data, function(err) {
+        fs.writeFile("/tmp/add." + req.params.username + ".vpnht", data, function(err) {
             if(err) {
                 status = 'Failed'
                 res.send({code: status, message: result.stdout});
                 return next();
             } else {
-                result = execSync(CONFIG.LOCAL_COMMAND.ADD, true);
+                result = execSync(CONFIG.LOCAL_COMMAND.ADD + " " + req.params.username, true);
                 if (result.stderr === '') {
                     status = 'SuccessPost'
                     res.send({code: status, message: result.stdout});
