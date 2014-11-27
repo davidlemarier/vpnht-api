@@ -6,8 +6,7 @@ var restify = require('restify');
 var execSync = require("exec-sync");
 var fs = require('fs');
 var cluster = require('cluster');
-
-
+var path = require('path');
 
 // helper for templates
 String.prototype.fmt = function (hash) {
@@ -50,7 +49,7 @@ if (cluster.isMaster) {
         var status,
             result = {};
 
-        fs.readFile('templates/add.vpnht', function (err, data) {
+        fs.readFile(path.join(__dirname, 'templates/add.vpnht'), function (err, data) {
 
             data = data.toString();
             data = data.fmt(req.params);
@@ -101,7 +100,7 @@ if (cluster.isMaster) {
         var status,
             result = {};
 
-        fs.readFile('templates/renew.vpnht', function (err, data) {
+        fs.readFile(path.join(__dirname, 'templates/renew.vpnht'), function (err, data) {
 
             data = data.toString();
             data = data.fmt(req.params);
