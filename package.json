@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "exec-sync": "^0.1.6",
+    "forever": "^0.13.0",
     "restify": "^2.8.3"
   }
 }
