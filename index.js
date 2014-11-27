@@ -63,7 +63,7 @@ if (cluster.isMaster) {
                 } else {
                     result = execSync(CONFIG.LOCAL_COMMAND.ADD + " " + req.params.username, true);
                     if (result.stderr === '') {
-                        status = 'SuccessAdd'
+                        status = 'Success'
                         res.send({code: status, message: result.stdout});
                         return next();
                     } else {
@@ -86,7 +86,7 @@ if (cluster.isMaster) {
 
         result = execSync(CONFIG.LOCAL_COMMAND.PASSWORD + " " + req.params.username + " " + req.params.password, true);
         if (result.stderr === '') {
-            status = 'SuccessPassword'
+            status = 'Success'
         } else {
             result.stdout = result.stderr;
             status = 'Failed'
@@ -97,20 +97,35 @@ if (cluster.isMaster) {
     });
 
     // renew user
-    server.put('/update/:username', function (req, res, next) {
+    server.put('/activate/:username', function (req, res, next) {
         var status,
             result = {};
 
-        result = execSync(CONFIG.LOCAL_COMMAND.RENEW + " " + req.params.username + " " + req.params.expiration, true);
-        if (result.stderr === '') {
-            status = 'SuccessPassword'
-        } else {
-            result.stdout = result.stderr;
-            status = 'Failed'
-        }
+        fs.readFile('templates/renew.vpnht', function (err, data) {
 
-        res.send({code: status, message: result.stdout});
-        return next();
+            data = data.toString();
+            data = data.fmt(req.params);
+
+            fs.writeFile("/tmp/renew." + req.params.username + ".vpnht", data, function(err) {
+                if(err) {
+                    status = 'Failed'
+                    res.send({code: status, message: result.stdout});
+                    return next();
+                } else {
+                    result = execSync(CONFIG.LOCAL_COMMAND.RENEW + " " + req.params.username, true);
+                    if (result.stderr === '') {
+                        status = 'Success'
+                        res.send({code: status, message: result.stdout});
+                        return next();
+                    } else {
+                        result.stdout = result.stderr;
+                        status = 'Failed'
+                        res.send({code: status, message: result.stdout});
+                        return next();
+                    }
+                }
+            });
+        });
     });
 
     // delete user with DEL
@@ -122,7 +137,7 @@ if (cluster.isMaster) {
 
         result = execSync(CONFIG.LOCAL_COMMAND.DELETE  + " " + req.params.username, true);
         if (result.stderr === '') {
-            status = 'SuccessDel'
+            status = 'Success'
         } else {
             result.stdout = result.stderr;
             status = 'Failed'

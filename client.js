@@ -3,7 +3,7 @@ var restify = require('restify');
 
 
 var client = restify.createStringClient({
-  url: 'http://fr01.vpn.ht:8080',
+  url: 'http://localhost:1234',
 });
 client.basicAuth('API_KEY', 'API_SECRET');
 
