@@ -10,11 +10,8 @@
     "LOCAL_COMMAND": {
         "ADD": "ls -la",
         "DELETE": "ls -la",
-        "UPDATE": "ls -la"
-    },
-    "FILES": {
-        "ADD": "/tmp/add.vpnht"
+        "PASSWORD": "ls -la",
+        "RENEW": "ls -la"
     }
 }
-
 ```
