@@ -134,7 +134,7 @@ if (cluster.isMaster) {
 			function (err, result) {
 				if (err) throw err;
 				console.log(result)
-				if (result) {
+				if (!result) {
 					connection.query('INSERT INTO radcheck (username,attribute,op,value) VALUES (?,?,?,?)', [req.params.username, 'Expiration', ':=', req.params.expiration],
 						function (err, result) {
 							if (err) throw err;
