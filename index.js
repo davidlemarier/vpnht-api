@@ -3,10 +3,7 @@ var CONFIG = require('./config.json');
 var CREDENTIALS = CONFIG.CREDENTIALS;
 
 var restify = require('restify');
-var execSync = require("exec-sync");
-var fs = require('fs');
 var cluster = require('cluster');
-var path = require('path');
 var Client = require('mariasql');
 var c = new Client();
 
