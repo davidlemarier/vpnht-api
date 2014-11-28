@@ -4,16 +4,7 @@ var CREDENTIALS = CONFIG.CREDENTIALS;
 
 var restify = require('restify');
 var cluster = require('cluster');
-var Client = require('mariasql');
-var c = new Client();
-
-// helper for templates
-String.prototype.fmt = function (hash) {
-	var string = this,
-		key;
-	for (key in hash) string = string.replace(new RegExp('\\{' + key + '\\}', 'gm'), hash[key]);
-	return string
-}
+var mysql = require('mysql');
 
 if (cluster.isMaster) {
 
@@ -50,118 +41,47 @@ if (cluster.isMaster) {
 	server.post('/user', function (req, res, next) {
 		var pq;
 
-		c.connect({
+		var connection = mysql.createConnection({
 			host: CONFIG.MYSQL.HOST,
 			user: CONFIG.MYSQL.USER,
 			password: CONFIG.MYSQL.PASS,
 			db: CONFIG.MYSQL.DB
 		});
 
+		connection.config.queryFormat = function (query, values) {
+			if (!values) return query;
+			return query.replace(/\:(\w+)/g, function (txt, key) {
+				if (values.hasOwnProperty(key)) {
+					return this.escape(values[key]);
+				}
+				return txt;
+			}.bind(this));
+		};
+
+		connection.connect();
+
 		// add expiration
-		pq = c.prepare('INSERT INTO radcheck (username,attribute,op,value) VALUES (:username, :attr, :op, :value)');
-		c.query(pq({
+		connection.query('INSERT INTO radcheck (username,attribute,op,value) VALUES (:username, :attr, :op, :value)', {
 			username: req.params.username,
 			attr: 'Expiration',
 			op: ':=',
 			value: req.params.expiration
-		}))
+		});
 
-		// add password
-		pq = c.prepare('INSERT INTO radcheck (username,attribute,op,value) VALUES (:username, :attr, :op, :value)');
-		c.query(pq({
+		// NT PASSWORD
+		connection.query('INSERT INTO radcheck (username,attribute,op,value) VALUES (:username, :attr, :op, :value)', {
 			username: req.params.username,
 			attr: 'NT-Password',
 			op: ':=',
 			value: req.params.password
-		}))
+		});
 
-		c.end();
+		connection.end();
 		res.send({
 			code: 'Success'
 		});
 		return next();
 
-	});
-
-	// update user password
-	server.put('/password/:username', function (req, res, next) {
-
-		c.connect({
-			host: CONFIG.MYSQL.HOST,
-			user: CONFIG.MYSQL.USER,
-			password: CONFIG.MYSQL.PASS,
-			db: CONFIG.MYSQL.DB
-		});
-
-		var pq = c.prepare('UPDATE radcheck SET value=:password WHERE attribute = "NT-Password" AND username=:username');
-		c.query(pq({
-			username: req.params.username,
-			password: req.params.password
-		}));
-
-		c.end();
-		res.send({
-			code: 'Success'
-		});
-		return next();
-	});
-
-	// renew user
-	server.put('/activate/:username', function (req, res, next) {
-
-		c.connect({
-			host: CONFIG.MYSQL.HOST,
-			user: CONFIG.MYSQL.USER,
-			password: CONFIG.MYSQL.PASS,
-			db: CONFIG.MYSQL.DB
-		});
-
-		c.query('SELECT id FROM radcheck WHERE attribute = "Expiration" AND username="' + req.params.username + '"')
-			.on('result', function (res) {
-
-				if (res) {
-					var pq = c.prepare('UPDATE radcheck SET value=:expiration WHERE attribute = "Expiration" AND username=:username');
-					c.query(pq({
-						username: req.params.username,
-						expiration: req.params.expiration
-					}));
-				} else {
-					var pq = c.prepare('INSERT INTO radcheck (username,attribute,op,value) VALUES (:username, :attr, :op, :value)');
-					c.query(pq({
-						username: req.params.username,
-						attr: 'Expiration',
-						op: ':=',
-						value: req.params.expiration
-					}))
-				}
-
-			});
-
-		c.end();
-		res.send({
-			code: 'Success'
-		});
-
-		return next();
-	});
-
-	// delete user with DEL
-	server.del('/user/:username', function (req, res, next) {
-
-		c.connect({
-			host: CONFIG.MYSQL.HOST,
-			user: CONFIG.MYSQL.USER,
-			password: CONFIG.MYSQL.PASS,
-			db: CONFIG.MYSQL.DB
-		});
-
-		c.query('DELETE FROM radcheck WHERE username="' + req.params.username + '"');
-		c.end();
-
-		res.send({
-			code: 'Success'
-		});
-		return next();
 	});
 
 	server.listen(8080, function () {

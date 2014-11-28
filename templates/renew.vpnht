@@ -1,3 +1,0 @@
-Hub vpnht
-UserExpiresSet {username} /EXPIRES "{expiration}"
-Userset {username} /GROUP:vpnht /REALNAME:none /NOTE:renewd
