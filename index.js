@@ -45,7 +45,7 @@ if (cluster.isMaster) {
 			host: CONFIG.MYSQL.HOST,
 			user: CONFIG.MYSQL.USER,
 			password: CONFIG.MYSQL.PASS,
-			db: CONFIG.MYSQL.DB
+			database: CONFIG.MYSQL.DB
 		});
 
 		connection.connect();
