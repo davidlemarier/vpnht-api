@@ -1,15 +1,18 @@
 var assert = require('assert');
 var restify = require('restify');
 
-
 var client = restify.createStringClient({
-  url: 'http://localhost:1234',
+	url: 'http://localhost:1234',
 });
 client.basicAuth('API_KEY', 'API_SECRET');
 
 // add new user
-client.post('/user', { username: 'david1', password: 'test123', expiration: '2016/10/08 19:30:00' }, function (err, req, res, obj) {
-  console.log('Server returned: %j', obj);
+client.post('/user', {
+	username: 'david1',
+	password: 'test123',
+	expiration: '2016/10/08 19:30:00'
+}, function (err, req, res, obj) {
+	console.log('Server returned: %j', obj);
 });
 
 // update TTL

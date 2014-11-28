@@ -153,7 +153,7 @@ if (cluster.isMaster) {
 			db: CONFIG.MYSQL.DB
 		});
 
-		c.query('DELETE * FROM radcheck WHERE username="' + req.params.username + '"');
+		c.query('DELETE FROM radcheck WHERE username="' + req.params.username + '"');
 		c.end();
 
 		res.send({
