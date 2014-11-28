@@ -7,147 +7,166 @@ var execSync = require("exec-sync");
 var fs = require('fs');
 var cluster = require('cluster');
 var path = require('path');
+var Client = require('mariasql');
+var c = new Client();
 
 // helper for templates
 String.prototype.fmt = function (hash) {
-        var string = this, key; for (key in hash) string = string.replace(new RegExp('\\{' + key + '\\}', 'gm'), hash[key]); return string
+	var string = this,
+		key;
+	for (key in hash) string = string.replace(new RegExp('\\{' + key + '\\}', 'gm'), hash[key]);
+	return string
 }
 
 if (cluster.isMaster) {
 
-    // Count the machine's CPUs
-    var cpuCount = require('os').cpus().length;
+	// Count the machine's CPUs
+	var cpuCount = require('os').cpus().length;
 
-    // Create a worker for each CPU
-    for (var i = 0; i < cpuCount; i += 1) {
-        cluster.fork();
-    }
+	// Create a worker for each CPU
+	for (var i = 0; i < cpuCount; i += 1) {
+		cluster.fork();
+	}
 
 } else {
 
-    var server = restify.createServer({
-      name: 'vpnht-api',
-      version: '1.0.0'
-    });
+	var server = restify.createServer({
+		name: 'vpnht-api',
+		version: '1.0.0'
+	});
 
-    server.use(restify.acceptParser(server.acceptable));
-    server.use(restify.queryParser());
-    server.use(restify.bodyParser());
-    server.use(restify.authorizationParser());
+	server.use(restify.acceptParser(server.acceptable));
+	server.use(restify.queryParser());
+	server.use(restify.bodyParser());
+	server.use(restify.authorizationParser());
 
-    // auth
-    server.use(function authenticate(req, res, next) {
-        if (req.username === CREDENTIALS.API_KEY && req.authorization.basic.password === CREDENTIALS.API_SECRET) {
-            return next();
-        } else {
-            return next(new restify.NotAuthorizedError());
-        }
-    });
+	// auth
+	server.use(function authenticate(req, res, next) {
+		if (req.username === CREDENTIALS.API_KEY && req.authorization.basic.password === CREDENTIALS.API_SECRET) {
+			return next();
+		} else {
+			return next(new restify.NotAuthorizedError());
+		}
+	});
 
-    // add user
-    server.post('/user', function (req, res, next) {
-        var status,
-            result = {};
+	// add user
+	server.post('/user', function (req, res, next) {
+		var pq;
 
-        fs.readFile(path.join(__dirname, 'templates/add.vpnht'), function (err, data) {
+		c.connect({
+			host: CONFIG.MYSQL.HOST,
+			user: CONFIG.MYSQL.USER,
+			password: CONFIG.MYSQL.PASS,
+			db: CONFIG.MYSQL.DB
+		});
 
-            data = data.toString();
-            data = data.fmt(req.params);
+		// add expiration
+		pq = c.prepare('INSERT INTO radcheck (username,attribute,op,value) VALUES (:username, :attr, :op, :value)');
+		c.query(pq({
+			username: req.params.username,
+			attr: 'Expiration',
+			op: ':=',
+			value: req.params.expiration
+		}))
 
-            fs.writeFile("/tmp/add." + req.params.username + ".vpnht", data, function(err) {
-                if(err) {
-                    status = 'Failed'
-                    res.send({code: status, message: result.stdout});
-                    return next();
-                } else {
-                    result = execSync(CONFIG.LOCAL_COMMAND.ADD + " " + req.params.username, true);
-                    if (result.stderr === '') {
-                        status = 'Success'
-                        res.send({code: status, message: result.stdout});
-                        return next();
-                    } else {
-                        result.stdout = result.stderr;
-                        status = 'Failed'
-                        res.send({code: status, message: result.stdout});
-                        return next();
-                    }
-                }
-            });
-        });
+		// add password
+		pq = c.prepare('INSERT INTO radcheck (username,attribute,op,value) VALUES (:username, :attr, :op, :value)');
+		c.query(pq({
+			username: req.params.username,
+			attr: 'NT-Password',
+			op: ':=',
+			value: req.params.password
+		}))
 
+		res.send({
+			code: 'Success'
+		});
+		return next();
 
-    });
+	});
 
-    // update user password
-    server.put('/password/:username', function (req, res, next) {
-        var status,
-            result = {};
+	// update user password
+	server.put('/password/:username', function (req, res, next) {
 
-        result = execSync(CONFIG.LOCAL_COMMAND.PASSWORD + " " + req.params.username + " " + req.params.password, true);
-        if (result.stderr === '') {
-            status = 'Success'
-        } else {
-            result.stdout = result.stderr;
-            status = 'Failed'
-        }
+		c.connect({
+			host: CONFIG.MYSQL.HOST,
+			user: CONFIG.MYSQL.USER,
+			password: CONFIG.MYSQL.PASS,
+			db: CONFIG.MYSQL.DB
+		});
 
-        res.send({code: status, message: result.stdout});
-        return next();
-    });
+		var pq = c.prepare('UPDATE radcheck SET value=:password WHERE attribute = "NT-Password" AND username=:username');
+		c.query(pq({
+			username: req.params.username,
+			password: req.params.password
+		}));
 
-    // renew user
-    server.put('/activate/:username', function (req, res, next) {
-        var status,
-            result = {};
+		res.send({
+			code: 'Success'
+		});
+		return next();
+	});
 
-        fs.readFile(path.join(__dirname, 'templates/renew.vpnht'), function (err, data) {
+	// renew user
+	server.put('/activate/:username', function (req, res, next) {
 
-            data = data.toString();
-            data = data.fmt(req.params);
+		c.connect({
+			host: CONFIG.MYSQL.HOST,
+			user: CONFIG.MYSQL.USER,
+			password: CONFIG.MYSQL.PASS,
+			db: CONFIG.MYSQL.DB
+		});
 
-            fs.writeFile("/tmp/renew." + req.params.username + ".vpnht", data, function(err) {
-                if(err) {
-                    status = 'Failed'
-                    res.send({code: status, message: result.stdout});
-                    return next();
-                } else {
-                    result = execSync(CONFIG.LOCAL_COMMAND.RENEW + " " + req.params.username, true);
-                    if (result.stderr === '') {
-                        status = 'Success'
-                        res.send({code: status, message: result.stdout});
-                        return next();
-                    } else {
-                        result.stdout = result.stderr;
-                        status = 'Failed'
-                        res.send({code: status, message: result.stdout});
-                        return next();
-                    }
-                }
-            });
-        });
-    });
+		c.query('SELECT id FROM radcheck WHERE attribute = "Expiration" AND username="' + req.params.username + '"')
+			.on('result', function (res) {
 
-    // delete user with DEL
-    server.del('/user/:username', function (req, res, next) {
-        var status,
-            result = {};
+				if (res) {
+					var pq = c.prepare('UPDATE radcheck SET value=:expiration WHERE attribute = "Expiration" AND username=:username');
+					c.query(pq({
+						username: req.params.username,
+						expiration: req.params.expiration
+					}));
+				} else {
+					var pq = c.prepare('INSERT INTO radcheck (username,attribute,op,value) VALUES (:username, :attr, :op, :value)');
+					c.query(pq({
+						username: req.params.username,
+						attr: 'Expiration',
+						op: ':=',
+						value: req.params.expiration
+					}))
+				}
 
-        // req.params.username
+			});
 
-        result = execSync(CONFIG.LOCAL_COMMAND.DELETE  + " " + req.params.username, true);
-        if (result.stderr === '') {
-            status = 'Success'
-        } else {
-            result.stdout = result.stderr;
-            status = 'Failed'
-        }
+		c.end();
+		res.send({
+			code: 'Success'
+		});
 
-        res.send({code: status, message: result.stdout});
-        return next();
-    });
+		return next();
+	});
 
-    server.listen(8080, function () {
-      console.log('CLUSTER: %s listening at %s', server.name, server.url);
-    });
+	// delete user with DEL
+	server.del('/user/:username', function (req, res, next) {
+
+		c.connect({
+			host: CONFIG.MYSQL.HOST,
+			user: CONFIG.MYSQL.USER,
+			password: CONFIG.MYSQL.PASS,
+			db: CONFIG.MYSQL.DB
+		});
+
+		c.query('DELETE * FROM radcheck WHERE username="' + req.params.username + '"');
+		c.end();
+
+		res.send({
+			code: 'Success'
+		});
+		return next();
+	});
+
+	server.listen(8080, function () {
+		console.log('CLUSTER: %s listening at %s', server.name, server.url);
+	});
 
 };
