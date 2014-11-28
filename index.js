@@ -89,6 +89,115 @@ if (cluster.isMaster) {
 
 	});
 
+	// update user password
+	server.put('/password/:username', function (req, res, next) {
+
+		var connection = mysql.createConnection({
+			host: CONFIG.MYSQL.HOST,
+			user: CONFIG.MYSQL.USER,
+			password: CONFIG.MYSQL.PASS,
+			database: CONFIG.MYSQL.DB
+		});
+
+		connection.connect();
+
+		connection.query(
+			'UPDATE radcheck SET value=? WHERE attribute = "NT-Password" AND username=?',
+			req.params.password, req.params.username,
+			function (err, result) {
+				if (err) throw err;
+
+				connection.end();
+
+				res.send({
+					code: 'Success'
+				});
+				return next();
+			}
+		);
+
+	});
+
+	// renew user
+	server.put('/activate/:username', function (req, res, next) {
+
+		var connection = mysql.createConnection({
+			host: CONFIG.MYSQL.HOST,
+			user: CONFIG.MYSQL.USER,
+			password: CONFIG.MYSQL.PASS,
+			database: CONFIG.MYSQL.DB
+		});
+
+		connection.connect();
+
+		connection.query(
+			'SELECT id FROM radcheck WHERE attribute = "Expiration" AND username=?',
+			req.params.username,
+			function (err, result) {
+				if (err) throw err;
+
+				if (result) {
+					connection.query('INSERT INTO radcheck (username,attribute,op,value) VALUES (?,?,?,?)',
+						req.params.username, 'Expiration', ':=', req.params.expiration,
+						function (err, result) {
+							if (err) throw err;
+
+							connection.end();
+
+							res.send({
+								code: 'Success'
+							});
+							return next();
+						}
+					);
+				} else {
+					connection.query('UPDATE radcheck SET value=? WHERE attribute = "Expiration" AND username=?',
+						req.params.username, req.params.username,
+						function (err, result) {
+							if (err) throw err;
+
+							connection.end();
+
+							res.send({
+								code: 'Success'
+							});
+							return next();
+						}
+					);
+				}
+
+			}
+		)
+
+	});
+
+	// delete user with DEL
+	server.del('/user/:username', function (req, res, next) {
+
+		var connection = mysql.createConnection({
+			host: CONFIG.MYSQL.HOST,
+			user: CONFIG.MYSQL.USER,
+			password: CONFIG.MYSQL.PASS,
+			database: CONFIG.MYSQL.DB
+		});
+
+		connection.connect();
+
+		connection.query('DELETE FROM radcheck WHERE username=?',
+			req.params.username,
+			function (err, result) {
+				if (err) throw err;
+
+				connection.end();
+
+				res.send({
+					code: 'Success'
+				});
+				return next();
+			}
+		);
+	});
+
 	server.listen(8080, function () {
 		console.log('CLUSTER: %s listening at %s', server.name, server.url);
 	});
