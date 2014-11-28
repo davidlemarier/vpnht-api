@@ -75,6 +75,7 @@ if (cluster.isMaster) {
 			value: req.params.password
 		}))
 
+		c.end();
 		res.send({
 			code: 'Success'
 		});
@@ -98,6 +99,7 @@ if (cluster.isMaster) {
 			password: req.params.password
 		}));
 
+		c.end();
 		res.send({
 			code: 'Success'
 		});
