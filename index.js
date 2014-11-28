@@ -48,6 +48,8 @@ if (cluster.isMaster) {
 			db: CONFIG.MYSQL.DB
 		});
 
+		connection.connect();
+
 		connection.config.queryFormat = function (query, values) {
 			if (!values) return query;
 			return query.replace(/\:(\w+)/g, function (txt, key) {
@@ -58,29 +60,32 @@ if (cluster.isMaster) {
 			}.bind(this));
 		};
 
-		connection.connect();
-
 		// add expiration
 		connection.query('INSERT INTO radcheck (username,attribute,op,value) VALUES (:username, :attr, :op, :value)', {
 			username: req.params.username,
 			attr: 'Expiration',
 			op: ':=',
 			value: req.params.expiration
-		});
+		}, function (err, result) {
+			if (err) throw err;
 
-		// NT PASSWORD
-		connection.query('INSERT INTO radcheck (username,attribute,op,value) VALUES (:username, :attr, :op, :value)', {
-			username: req.params.username,
-			attr: 'NT-Password',
-			op: ':=',
-			value: req.params.password
-		});
+			// NT PASSWORD
+			connection.query('INSERT INTO radcheck (username,attribute,op,value) VALUES (:username, :attr, :op, :value)', {
+				username: req.params.username,
+				attr: 'NT-Password',
+				op: ':=',
+				value: req.params.password
+			}, function (err, result) {
+				if (err) throw err;
 
-		connection.end();
-		res.send({
-			code: 'Success'
+				connection.end();
+
+				res.send({
+					code: 'Success'
+				});
+				return next();
+			});
 		});
-		return next();
 
 	});
 
