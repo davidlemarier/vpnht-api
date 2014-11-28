@@ -133,8 +133,7 @@ if (cluster.isMaster) {
 			'SELECT id FROM radcheck WHERE attribute = "Expiration" AND username=?', [req.params.username],
 			function (err, result) {
 				if (err) throw err;
-				console.log(result)
-				if (!result) {
+				if (result.length === 0) {
 					connection.query('INSERT INTO radcheck (username,attribute,op,value) VALUES (?,?,?,?)', [req.params.username, 'Expiration', ':=', req.params.expiration],
 						function (err, result) {
 							if (err) throw err;
