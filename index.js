@@ -102,7 +102,7 @@ if (cluster.isMaster) {
 		connection.connect();
 
 		connection.query(
-			'UPDATE radcheck SET value=?? WHERE attribute = `NT-Password` AND username=??', [req.params.password, req.params.username],
+			'UPDATE radcheck SET value=? WHERE attribute = "NT-Password" AND username=?', [req.params.password, req.params.username],
 			function (err, result) {
 				if (err) throw err;
 
@@ -130,13 +130,12 @@ if (cluster.isMaster) {
 		connection.connect();
 
 		connection.query(
-			'SELECT id FROM radcheck WHERE attribute = `Expiration` AND username=??', [req.params.username],
+			'SELECT id FROM radcheck WHERE attribute = "Expiration" AND username=?', [req.params.username],
 			function (err, result) {
 				if (err) throw err;
-
+				console.log(result)
 				if (result) {
-					connection.query('INSERT INTO radcheck (username,attribute,op,value) VALUES (??,??,??,??)',
-						req.params.username, 'Expiration', ':=', req.params.expiration,
+					connection.query('INSERT INTO radcheck (username,attribute,op,value) VALUES (??,??,??,??)', [req.params.username, 'Expiration', ':=', req.params.expiration],
 						function (err, result) {
 							if (err) throw err;
 
@@ -149,7 +148,7 @@ if (cluster.isMaster) {
 						}
 					);
 				} else {
-					connection.query('UPDATE radcheck SET value=?? WHERE attribute = `Expiration` AND username=??', [req.params.expiration, req.params.username],
+					connection.query('UPDATE radcheck SET value=?? WHERE attribute = "Expiration" AND username=??', [req.params.expiration, req.params.username],
 						function (err, result) {
 							if (err) throw err;
 
