@@ -133,33 +133,19 @@ if (cluster.isMaster) {
 			'SELECT id FROM radcheck WHERE attribute = "Expiration" AND username=?', [req.params.username],
 			function (err, result) {
 				if (err) throw err;
-				if (result.length === 0) {
-					connection.query('INSERT INTO radcheck (username,attribute,op,value) VALUES (?,?,?,?)', [req.params.username, 'Expiration', ':=', req.params.expiration],
-						function (err, result) {
-							if (err) throw err;
 
-							connection.end();
+				connection.query('UPDATE radcheck SET value=? WHERE attribute = "Expiration" AND username=?', [req.params.expiration, req.params.username],
+					function (err, result) {
+						if (err) throw err;
 
-							res.send({
-								code: 'Success'
-							});
-							return next();
-						}
-					);
-				} else {
-					connection.query('UPDATE radcheck SET value=? WHERE attribute = "Expiration" AND username=?', [req.params.expiration, req.params.username],
-						function (err, result) {
-							if (err) throw err;
+						connection.end();
 
-							connection.end();
-
-							res.send({
-								code: 'Success'
-							});
-							return next();
-						}
-					);
-				}
+						res.send({
+							code: 'Success'
+						});
+						return next();
+					}
+				);
 
 			}
 		)
