@@ -5,6 +5,7 @@ var CREDENTIALS = CONFIG.CREDENTIALS;
 var restify = require('restify');
 var cluster = require('cluster');
 var mysql = require('mysql');
+var _ = require('lodash');
 
 if (cluster.isMaster) {
 
@@ -177,6 +178,59 @@ if (cluster.isMaster) {
 			}
 		);
 	});
+
+
+	// delete user with DEL
+	server.get('/stats', function (req, res, next) {
+
+		var connection = mysql.createConnection({
+			host: CONFIG.MYSQL.HOST,
+			user: CONFIG.MYSQL.USER,
+			password: CONFIG.MYSQL.PASS,
+			database: CONFIG.MYSQL.DB
+		});
+
+		connection.connect();
+
+		var finalStats = [];
+
+		connection.query('select * from radacct GROUP by nasipaddress;',
+			function (err, result) {
+				if (err) throw err;
+
+
+
+				_.each(result, function(server) {
+
+						connection.query('select count(*) as count from radacct WHERE nasipaddress = ?', [server.nasipaddress],
+							function (err, total) {
+								if (err) throw err;
+
+								connection.query('select count(*) as count from radacct WHERE nasipaddress = ? AND acctstoptime IS NULL', [server.nasipaddress],
+									function (err, totalLive) {
+										if (err) throw err;
+
+										finalStats[server.nasipaddress] = {
+											connexions: total[0].count,
+											connected: totalLive[0].count
+										};
+								});
+
+						});
+				});
+
+				connection.end();
+
+				res.send({
+					stats: finalStats
+				});
+
+				return next();
+
+			}
+		);
+	});
+
 
 	server.listen(8080, function () {
 		console.log('CLUSTER: %s listening at %s', server.name, server.url);

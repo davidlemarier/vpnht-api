@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "lodash": "^2.4.1",
     "mysql": "^2.5.3",
     "restify": "^2.8.3"
   }
