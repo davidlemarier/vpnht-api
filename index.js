@@ -211,7 +211,7 @@ if (cluster.isMaster) {
 										if (err) throw err;
 
 										finalStats.push({
-											server: nasipaddress,
+											server: server.nasipaddress,
 											connexions: total[0].count,
 											connected: totalLive[0].count
 										});
