@@ -199,7 +199,7 @@ if (cluster.isMaster) {
 				if (err) throw err;
 
 				// we start @ 0;
-				var total = result.length-1;
+				var totalAcct = result.length-1;
 				_.each(result, function(server, key) {
 
 						connection.query('select count(*) as count from radacct WHERE nasipaddress = ?', [server.nasipaddress],
@@ -217,7 +217,7 @@ if (cluster.isMaster) {
 										});
 
 										// if last server we push content
-										if (total === key) {
+										if (key >= totalAcct) {
 											connection.end();
 
 											res.send({
