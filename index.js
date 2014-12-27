@@ -193,6 +193,7 @@ if (cluster.isMaster) {
 		connection.connect();
 
 		var finalStats = [];
+		var totaluserlive = 0;
 
 		connection.query('select * from radacct GROUP by nasipaddress;',
 			function (err, result) {
@@ -216,12 +217,15 @@ if (cluster.isMaster) {
 											connected: totalLive[0].count
 										});
 
+										totaluserlive = totaluserlive + parseInt(totalLive[0].count);
+
 										// if last server we push content
 										if (key >= totalAcct) {
 											connection.end();
 
 											res.send({
-												stats: finalStats
+												stats: finalStats,
+												totalLive: totaluserlive
 											});
 
 											return next();
