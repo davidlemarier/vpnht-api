@@ -198,9 +198,9 @@ if (cluster.isMaster) {
 			function (err, result) {
 				if (err) throw err;
 
-
-
-				_.each(result, function(server) {
+				// we start @ 0;
+				var total = result.length-1;
+				_.each(result, function(server, key) {
 
 						connection.query('select count(*) as count from radacct WHERE nasipaddress = ?', [server.nasipaddress],
 							function (err, total) {
@@ -210,22 +210,26 @@ if (cluster.isMaster) {
 									function (err, totalLive) {
 										if (err) throw err;
 
-										finalStats[server.nasipaddress] = {
+										finalStats.push({
+											server: nasipaddress,
 											connexions: total[0].count,
 											connected: totalLive[0].count
-										};
+										});
+
+										// if last server we push content
+										if (total === key) {
+											connection.end();
+
+											res.send({
+												stats: finalStats
+											});
+
+											return next();
+										}
 								});
 
 						});
 				});
-
-				connection.end();
-
-				res.send({
-					stats: finalStats
-				});
-
-				return next();
 
 			}
 		);
