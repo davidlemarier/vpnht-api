@@ -179,6 +179,37 @@ if (cluster.isMaster) {
 		);
 	});
 
+	server.get('/user/:username', function (req, res, next) {
+
+		var connection = mysql.createConnection({
+			host: CONFIG.MYSQL.HOST,
+			user: CONFIG.MYSQL.USER,
+			password: CONFIG.MYSQL.PASS,
+			database: CONFIG.MYSQL.DB
+		});
+
+		connection.connect();
+
+		connection.query('select * from radacct WHERE username=?', [req.params.username],
+			function (err, result) {
+				if (err) throw err;
+
+				connection.end();
+				if (result[0]) {
+					res.send({
+						user: result[0]
+					});
+				} else {
+					res.send({
+						user: false
+					});
+				}
+
+				return next();
+			}
+		);
+	});
+
 
 	// delete user with DEL
 	server.get('/stats', function (req, res, next) {
