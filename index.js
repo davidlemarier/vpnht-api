@@ -41,7 +41,7 @@ if (cluster.isMaster) {
 		} else {
 
 			// auth with freeradius
-			if (req.username) {
+			if (req.username && req.authorization && req.authorization.basic) {
 				var connection = mysql.createConnection({
 					host: CONFIG.MYSQL.HOST,
 					user: CONFIG.MYSQL.USER,
