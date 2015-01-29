@@ -31,11 +31,48 @@ if (cluster.isMaster) {
 
 	// auth
 	server.use(function authenticate(req, res, next) {
-		if (req.username === CREDENTIALS.API_KEY && req.authorization.basic.password === CREDENTIALS.API_SECRET) {
-			return next();
+
+		if (req.url !== '/servers') {
+			if (req.username === CREDENTIALS.API_KEY && req.authorization.basic.password === CREDENTIALS.API_SECRET) {
+				return next();
+			} else {
+				return next(new restify.NotAuthorizedError());
+			}
 		} else {
-			return next(new restify.NotAuthorizedError());
+
+			// auth with freeradius
+
+			var connection = mysql.createConnection({
+				host: CONFIG.MYSQL.HOST,
+				user: CONFIG.MYSQL.USER,
+				password: CONFIG.MYSQL.PASS,
+				database: CONFIG.MYSQL.DB
+			});
+
+			connection.connect();
+
+			connection.query(
+				'SELECT value FROM radcheck WHERE attribute = "NT-Password" AND username=?', [req.username],
+				function (err, result) {
+					if (err) {
+						res.send(401);
+
+					} else {
+						var nthash = require('smbhash').nthash;
+						// check passwd match
+						console.log(result);
+						console.log(nthash(req.authorization.basic.password));
+						if (result[0] && result[0].value == nthash(req.authorization.basic.password)) {
+							console.log("success");
+							next();
+						} else {
+							res.send(401);
+						}
+					}
+				}
+			);
 		}
+
 	});
 
 	// add user
@@ -210,6 +247,19 @@ if (cluster.isMaster) {
 		);
 	});
 
+	// pt client login
+	server.get('/servers', function (req, res, next) {
+		res.send(
+			{
+				"user": {
+					"username": req.username
+				},
+				"servers": [{"eu": "eu.vpn.ht", "us": "us.vpn.ht"}]
+			}
+		);
+
+		return next();
+	});
 
 	// delete user with DEL
 	server.get('/stats', function (req, res, next) {
