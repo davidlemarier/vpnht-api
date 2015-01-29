@@ -41,36 +41,35 @@ if (cluster.isMaster) {
 		} else {
 
 			// auth with freeradius
+			if (req.username) {
+				var connection = mysql.createConnection({
+					host: CONFIG.MYSQL.HOST,
+					user: CONFIG.MYSQL.USER,
+					password: CONFIG.MYSQL.PASS,
+					database: CONFIG.MYSQL.DB
+				});
 
-			var connection = mysql.createConnection({
-				host: CONFIG.MYSQL.HOST,
-				user: CONFIG.MYSQL.USER,
-				password: CONFIG.MYSQL.PASS,
-				database: CONFIG.MYSQL.DB
-			});
+				connection.connect();
 
-			connection.connect();
-
-			connection.query(
-				'SELECT value FROM radcheck WHERE attribute = "NT-Password" AND username=?', [req.username],
-				function (err, result) {
-					if (err) {
-						res.send(401);
-
-					} else {
-						var nthash = require('smbhash').nthash;
-						// check passwd match
-						console.log(result);
-						console.log(nthash(req.authorization.basic.password));
-						if (result[0] && result[0].value == nthash(req.authorization.basic.password)) {
-							console.log("success");
-							next();
-						} else {
+				connection.query(
+					'SELECT value FROM radcheck WHERE attribute = "NT-Password" AND username=?', [req.username],
+					function (err, result) {
+						if (err) {
 							res.send(401);
+						} else {
+							var nthash = require('smbhash').nthash;
+							// check passwd match
+							if (result[0] && result[0].value == nthash(req.authorization.basic.password)) {
+								next();
+							} else {
+								res.send(401);
+							}
 						}
 					}
-				}
-			);
+				);
+			} else {
+				res.send(401);
+			}
 		}
 
 	});
