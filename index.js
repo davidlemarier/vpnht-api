@@ -7,6 +7,9 @@ var cluster = require('cluster');
 var mysql = require('mysql');
 var _ = require('lodash');
 
+
+var vpnServers = require('./servers');
+
 if (cluster.isMaster) {
 
 	// Count the machine's CPUs
@@ -253,7 +256,7 @@ if (cluster.isMaster) {
 				"user": {
 					"username": req.username
 				},
-				"servers": [{"eu": "eu.vpn.ht", "us": "us.vpn.ht"}]
+				"servers": vpnServers
 			}
 		);
 
