@@ -35,7 +35,7 @@ if (cluster.isMaster) {
 	// auth
 	server.use(function authenticate(req, res, next) {
 
-		if (req.url !== '/servers') {
+		if (req.url !== '/servers' && req.url !== '/smartdns') {
 			if (req.username === CREDENTIALS.API_KEY && req.authorization.basic.password === CREDENTIALS.API_SECRET) {
 				return next();
 			} else {
@@ -265,13 +265,17 @@ if (cluster.isMaster) {
 
 	// smartdns whitelist
 	server.get('/smartdns', function (req, res, next) {
+		var ip = req.headers['x-forwarded-for'] ||
+	    	req.connection.remoteAddress ||
+	     	req.socket.remoteAddress ||
+	     	req.connection.socket.remoteAddress;
 
 		// todo whitelist IP
-
 		res.send(
 			{
 				"user": {
-					"username": req.username
+					"username": req.username,
+					"ip": ip
 				},
 				"dns": ['178.62.106.191', '104.131.49.85']
 			}
