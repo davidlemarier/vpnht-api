@@ -263,6 +263,23 @@ if (cluster.isMaster) {
 		return next();
 	});
 
+	// smartdns whitelist
+	server.get('/smartdns', function (req, res, next) {
+
+		// todo whitelist IP
+
+		res.send(
+			{
+				"user": {
+					"username": req.username
+				},
+				"dns": ['178.62.106.191', '104.131.49.85']
+			}
+		);
+
+		return next();
+	});
+
 	// delete user with DEL
 	server.get('/stats', function (req, res, next) {
 
