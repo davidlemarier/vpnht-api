@@ -11,6 +11,7 @@
   "dependencies": {
     "lodash": "^2.4.1",
     "mysql": "^2.5.3",
+    "request": "^2.55.0",
     "restify": "^2.8.3",
     "smbhash": "0.0.1"
   }

@@ -7,7 +7,6 @@ var cluster = require('cluster');
 var mysql = require('mysql');
 var _ = require('lodash');
 
-
 var vpnServers = require('./servers');
 
 if (cluster.isMaster) {
@@ -315,25 +314,35 @@ if (cluster.isMaster) {
 									function (err, totalLive) {
 										if (err) throw err;
 
-										finalStats.push({
-											server: server.nasipaddress,
-											connexions: total[0].count,
-											connected: totalLive[0].count
-										});
+										request('https://myip.ht/ip/'+server.nasipaddress, function (error, response, body) {
 
-										totaluserlive = totaluserlive + parseInt(totalLive[0].count);
-
-										// if last server we push content
-										if (key >= totalAcct) {
-											connection.end();
-
-											res.send({
-												stats: finalStats,
-												totalLive: totaluserlive
+											var server = JSON.parse(body);
+											var host = false;
+											if (server && server.host) {
+												host = server.host;
+											}
+											finalStats.push({
+												server: server.nasipaddress,
+												connexions: total[0].count,
+												connected: totalLive[0].count,
+												hostname: host
 											});
 
-											return next();
-										}
+											totaluserlive = totaluserlive + parseInt(totalLive[0].count);
+
+											// if last server we push content
+											if (key >= totalAcct) {
+												connection.end();
+
+												res.send({
+													stats: finalStats,
+													totalLive: totaluserlive
+												});
+
+												return next();
+											}
+										});
+
 								});
 
 						});
