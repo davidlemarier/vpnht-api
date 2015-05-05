@@ -6,7 +6,6 @@ var restify = require('restify');
 var cluster = require('cluster');
 var mysql = require('mysql');
 var _ = require('lodash');
-var request = require('request');
 
 var vpnServers = require('./servers');
 
@@ -317,10 +316,10 @@ if (cluster.isMaster) {
 
 										request('https://myip.ht/ip/'+server.nasipaddress, function (error, response, body) {
 
-											var server = JSON.parse(body);
+											var serverD = JSON.parse(body);
 											var host = false;
-											if (server && server.host) {
-												host = server.host;
+											if (serverD && serverD.host) {
+												host = serverD.host;
 											}
 											finalStats.push({
 												server: server.nasipaddress,
