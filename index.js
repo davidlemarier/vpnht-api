@@ -6,6 +6,7 @@ var restify = require('restify');
 var cluster = require('cluster');
 var mysql = require('mysql');
 var _ = require('lodash');
+var request = require('request');
 
 var vpnServers = require('./servers');
 
